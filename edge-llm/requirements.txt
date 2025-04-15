@@ -1,0 +1,17 @@
+uvicorn
+fastapi
+pypdf
+chromadb
+langchain
+langchain-community
+langchain_text_splitters
+sentence-transformers
+langchain-chroma 
+pydantic==1.10.14
+tinydb 
+webSockets
+python-multipart
+typing
+pypdfium2
+asyncio
+InstructorEmbedding

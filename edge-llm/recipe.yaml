@@ -1,0 +1,24 @@
+---
+RecipeFormatVersion: "2020-01-25"
+ComponentName: "{COMPONENT_NAME}"
+ComponentVersion: "{COMPONENT_VERSION}"
+ComponentDescription: "Unleashing LLMS at the edge with AWS IoT."
+ComponentPublisher: "{COMPONENT_AUTHOR}"
+ComponentDependencies:
+  aws.greengrass.TokenExchangeService:
+    VersionRequirement: '^2.0.0'
+    DependencyType: HARD
+ComponentConfiguration:
+  DefaultConfiguration:
+    Message: "World"
+Manifests:
+  - Platform:
+      os: linux
+    Artifacts:
+      - URI: "s3://BUCKET_NAME/COMPONENT_NAME/COMPONENT_VERSION/com.jeremyritchie.EdgeLLM.zip"
+        Unarchive: ZIP
+    Lifecycle:
+      install: |
+        python3 -m pip install --user --break-system-packages uvicorn fastapi tinydb chromadb webSockets python-multipart numpy pandas matplotlib scipy
+      Run: "python3 -u {artifacts:decompressedPath}/com.jeremyritchie.EdgeLLM/main.py {configuration:/Message}"
+
