@@ -622,54 +622,75 @@ Expected Normal Engine Frequencies for {engine_info['rpm']} RPM, {engine_info['c
 - 3rd harmonic: ~{expected_freqs[2]:.1f} Hz
 - 4th harmonic: ~{expected_freqs[3]:.1f} Hz
 
-BASELINE NORMAL OPERATION CHARACTERISTICS:
-- RMS Amplitude: Typically 0.5-0.8 for normal operation
-- Crest Factor: Typically 1.5-2.5 for normal combustion
+BASELINE NORMAL OPERATION CHARACTERISTICS (with noise tolerance):
+- RMS Amplitude: Typically 0.6-0.9 for normal operation (baseline ~0.68, varies with noise)
+- Crest Factor: Typically 1.8-2.8 for normal combustion (baseline ~2.33, noise can affect this)
+- Maximum Amplitude: Typically 1.2-2.2 for normal operation (baseline ~1.58, noise dependent)
+- Total Vibration Energy: Typically 0.08-0.20 for normal operation (baseline ~0.117, varies with noise)
 - Frequency content: Dominated by firing frequency and its harmonics (2x, 3x, 4x)
 - NO significant energy above 400-500 Hz for normal operation
 
-KNOCK DETECTION INDICATORS:
-1. **Crest Factor Analysis** (MOST IMPORTANT):
-   - Normal operation: 1.5-2.5
-   - Light knock: 2.5-3.5
-   - Moderate knock: 3.5-4.5
-   - Heavy knock: >4.5
+KNOCK DETECTION INDICATORS (accounting for noise variations):
+1. **Crest Factor Analysis** (MOST IMPORTANT - less affected by noise):
+   - Normal operation: 1.8-2.8 (allows for noise variation)
+   - Light knock: 2.8-3.5 (clear increase above normal range)
+   - Moderate knock: 3.5-4.2 (significant elevation)
+   - Heavy knock: >4.2 (extreme values indicating severe knock)
    
-2. **High-Frequency Content** (CRITICAL):
+2. **High-Frequency Content** (CRITICAL - primary knock indicator):
    - Normal: Energy concentrated in firing frequency harmonics (<400 Hz)
    - Knock present: Significant energy at 400-800 Hz (knock resonant frequencies)
    - Look for frequencies around 400-800 Hz that are NOT multiples of the firing frequency
+   - This is the most reliable indicator as noise typically doesn't create specific resonant frequencies
    
-3. **RMS Amplitude Changes**:
-   - Moderate increase (20-50%) may indicate developing knock
-   - Significant increase (>50%) indicates established knock
+3. **RMS Amplitude Changes** (consider noise baseline):
+   - Normal range: 0.6-0.9 (accounts for noise variations)
+   - Light knock: 0.9-1.1 (clear increase above noise-affected normal range)
+   - Moderate knock: 1.1-1.3 (significant elevation)
+   - Heavy knock: >1.3 (extreme increase)
+
+4. **Maximum Amplitude Changes** (most noise-sensitive):
+   - Normal range: 1.2-2.2 (wide range due to noise sensitivity)
+   - Knock indicators: Sustained values above 2.5-3.0 (not just noise spikes)
 
 ANALYSIS EXAMPLES FOR REFERENCE:
-Normal Operation Example:
-- RMS: ~0.67, Crest Factor: ~1.9, Frequencies: 66.75 Hz, 133.25 Hz, 266.75 Hz
-- Assessment: Normal - crest factor <2.5, only harmonic frequencies present
+Normal Operation Example (Clean baseline):
+- RMS: ~0.68, Crest Factor: ~2.33, Max Amplitude: ~1.58, Total Energy: ~0.117
+- Frequencies: 66.75 Hz, 133.25 Hz, 266.75 Hz (only harmonics)
+- Assessment: Normal - crest factor ~2.3, only harmonic frequencies present
+
+Normal Operation with Noise (Expected variation):
+- RMS: 0.7-0.85, Crest Factor: 2.0-2.7, Max Amplitude: 1.4-2.1
+- Frequencies: Still dominated by harmonics, no high-frequency content
+- Assessment: Normal with noise - values elevated but within normal range, no knock frequencies
 
 Heavy Knock Example:
 - RMS: ~1.05, Crest Factor: ~4.6, Frequencies: 66.75 Hz, 133.25 Hz, 266.75 Hz, 666.75 Hz
-- Assessment: Heavy knock - crest factor >4.5, high-frequency content at 666.75 Hz
+- Assessment: Heavy knock - crest factor >4.2, high-frequency content at 666.75 Hz
 
-DECISION LOGIC:
-1. If crest factor <2.5 AND no significant frequencies >400 Hz → Normal operation
-2. If crest factor 2.5-3.5 AND some energy 400-600 Hz → Light knock
-3. If crest factor 3.5-4.5 AND clear energy 400-800 Hz → Moderate knock  
-4. If crest factor >4.5 AND strong energy >600 Hz → Heavy knock
+DECISION LOGIC (noise-robust):
+1. If crest factor <2.8 AND no significant frequencies >400 Hz → Normal operation (even with noise)
+2. If crest factor 2.8-3.5 AND some energy 400-600 Hz → Light knock
+3. If crest factor 3.5-4.2 AND clear energy 400-800 Hz → Moderate knock  
+4. If crest factor >4.2 AND strong energy >600 Hz → Heavy knock
+
+IMPORTANT: When assessing, consider that:
+- Noise primarily affects amplitude metrics (RMS, Max Amplitude) more than crest factor
+- High-frequency content (>400 Hz) is the most reliable knock indicator
+- Crest factor is relatively stable and less affected by broadband noise
+- Look for patterns, not just single elevated values
 
 Based on this vibration data, please provide:
 1. **Primary Assessment**: Is this normal engine operation or knock? State confidence level.
 2. **Detailed Analysis**: 
-   - Crest factor interpretation
+   - Crest factor interpretation (accounting for noise tolerance)
    - Frequency content analysis (normal harmonics vs. knock frequencies)
-   - Comparison to baseline normal operation
+   - Comparison to baseline normal operation (considering noise variations)
 3. **Knock Severity** (if present): None/Light/Moderate/Heavy with specific reasoning
 4. **Recommendations**: Immediate actions needed based on findings
 5. **Confidence Level**: High/Medium/Low with explanation of what led to this conclusion
 
-Remember: The presence of firing frequency harmonics (66-67 Hz, 133-134 Hz, 266-267 Hz for this engine) is NORMAL. Only frequencies significantly above 400 Hz that are not engine harmonics indicate knock.
+Remember: The presence of firing frequency harmonics (66-67 Hz, 133-134 Hz, 266-267 Hz for this engine) is NORMAL. Only frequencies significantly above 400 Hz that are not engine harmonics indicate knock. Noise can elevate amplitude metrics but should not create specific resonant frequencies.
 """
     
     return prompt
