@@ -609,40 +609,67 @@ Dominant Frequencies (Hz) and their magnitudes:
             prompt += f"- {timestamp}: RMS={hist_feat['rms_amplitude']:.4f}, "
             prompt += f"Max={hist_feat['max_amplitude']:.4f}\n"
     
-    prompt += """
-IMPORTANT CONTEXT ON ENGINE KNOCK:
+    # Calculate expected engine frequencies for reference
+    firing_freq = engine_info['firing_frequency']
+    expected_freqs = [firing_freq, firing_freq * 2, firing_freq * 3, firing_freq * 4]
+    
+    prompt += f"""
+CRITICAL ANALYSIS FRAMEWORK FOR ENGINE KNOCK DETECTION:
 
-Engine knock (detonation) typically presents in vibration data as:
-- High-frequency resonances (typically 4-10 kHz for passenger vehicles)
-- Sharp, transient spikes in amplitude that occur shortly after the normal combustion
-- Strong, damped sinusoidal patterns that decay quickly
-- Increased energy in specific frequency bands that correspond to cylinder block resonant frequencies
+Expected Normal Engine Frequencies for {engine_info['rpm']} RPM, {engine_info['cylinders']}-cylinder engine:
+- Primary firing frequency: ~{expected_freqs[0]:.1f} Hz
+- 2nd harmonic: ~{expected_freqs[1]:.1f} Hz  
+- 3rd harmonic: ~{expected_freqs[2]:.1f} Hz
+- 4th harmonic: ~{expected_freqs[3]:.1f} Hz
 
-Severity levels of knock:
-1. Light/Trace Knock: Occasional, barely detectable resonance. Minimal risk.
-2. Moderate Knock: Consistent resonance with moderate amplitude. Can cause damage over time.
-3. Heavy Knock: Prominent resonance with high amplitude. Immediate risk of damage.
-4. Severe Knock: Extreme amplitudes. Can cause catastrophic failure in minutes.
+BASELINE NORMAL OPERATION CHARACTERISTICS:
+- RMS Amplitude: Typically 0.5-0.8 for normal operation
+- Crest Factor: Typically 1.5-2.5 for normal combustion
+- Frequency content: Dominated by firing frequency and its harmonics (2x, 3x, 4x)
+- NO significant energy above 400-500 Hz for normal operation
 
-Impact of knock on engine components:
-- Piston damage: Melting, cracking, or ring land fractures
-- Cylinder head damage: Erosion of combustion chambers or valve seats
-- Rod bearing damage: Due to increased mechanical stress
-- Head gasket failure: From excessive thermal expansion and pressure
-- Overall performance degradation: Loss of power, reduced efficiency, increased emissions
+KNOCK DETECTION INDICATORS:
+1. **Crest Factor Analysis** (MOST IMPORTANT):
+   - Normal operation: 1.5-2.5
+   - Light knock: 2.5-3.5
+   - Moderate knock: 3.5-4.5
+   - Heavy knock: >4.5
+   
+2. **High-Frequency Content** (CRITICAL):
+   - Normal: Energy concentrated in firing frequency harmonics (<400 Hz)
+   - Knock present: Significant energy at 400-800 Hz (knock resonant frequencies)
+   - Look for frequencies around 400-800 Hz that are NOT multiples of the firing frequency
+   
+3. **RMS Amplitude Changes**:
+   - Moderate increase (20-50%) may indicate developing knock
+   - Significant increase (>50%) indicates established knock
 
-Confidence indicators in vibration data:
-- High confidence: Clear resonant frequencies matching expected knock patterns for this engine type
-- Medium confidence: Some knock indicators present but mixed with other signals
-- Low confidence: Minimal indications, possibly noise or other issues
+ANALYSIS EXAMPLES FOR REFERENCE:
+Normal Operation Example:
+- RMS: ~0.67, Crest Factor: ~1.9, Frequencies: 66.75 Hz, 133.25 Hz, 266.75 Hz
+- Assessment: Normal - crest factor <2.5, only harmonic frequencies present
+
+Heavy Knock Example:
+- RMS: ~1.05, Crest Factor: ~4.6, Frequencies: 66.75 Hz, 133.25 Hz, 266.75 Hz, 666.75 Hz
+- Assessment: Heavy knock - crest factor >4.5, high-frequency content at 666.75 Hz
+
+DECISION LOGIC:
+1. If crest factor <2.5 AND no significant frequencies >400 Hz → Normal operation
+2. If crest factor 2.5-3.5 AND some energy 400-600 Hz → Light knock
+3. If crest factor 3.5-4.5 AND clear energy 400-800 Hz → Moderate knock  
+4. If crest factor >4.5 AND strong energy >600 Hz → Heavy knock
 
 Based on this vibration data, please provide:
-1. An assessment of the engine's current condition with specific focus on knock detection
-2. Identification of any potential issues, including the severity level of knock if present
-3. Recommendations for maintenance actions to address identified issues
-4. Your confidence level in the analysis, explaining what specific patterns led to your conclusions
+1. **Primary Assessment**: Is this normal engine operation or knock? State confidence level.
+2. **Detailed Analysis**: 
+   - Crest factor interpretation
+   - Frequency content analysis (normal harmonics vs. knock frequencies)
+   - Comparison to baseline normal operation
+3. **Knock Severity** (if present): None/Light/Moderate/Heavy with specific reasoning
+4. **Recommendations**: Immediate actions needed based on findings
+5. **Confidence Level**: High/Medium/Low with explanation of what led to this conclusion
 
-Remember that engine knock becomes more damaging as RPM increases, and different cylinders may exhibit different levels of knock.
+Remember: The presence of firing frequency harmonics (66-67 Hz, 133-134 Hz, 266-267 Hz for this engine) is NORMAL. Only frequencies significantly above 400 Hz that are not engine harmonics indicate knock.
 """
     
     return prompt
@@ -732,10 +759,10 @@ async def ollama_analyze_engine(payload: any, websocket: WebSocket):
             except requests.exceptions.RequestException as e:
                 logging.error(f"Error connecting to Ollama: {e}")
                 raise Exception(f"Failed to connect to Ollama API: {e}")
-            
+
             # Make the request to Ollama with streaming response
             model_request_start = time.time()
-            response = session.post(
+            response = requests.post(
                 OLLAMA_GENERATE_URL,
                 json={
                     'model': model,
@@ -743,11 +770,9 @@ async def ollama_analyze_engine(payload: any, websocket: WebSocket):
                     'options': {
                         'temperature': temperature,
                         'top_p': top_p
-                    },
-                    'stream': True
+                    }
                 },
-                stream=True,
-                timeout=(10, 600)  # (connect_timeout, read_timeout) in seconds
+                stream=True
             )
             
             logging.info(f"Message posted to Ollama for engine analysis")
